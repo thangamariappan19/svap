@@ -6,10 +6,10 @@ import { VisaDataService } from '../../core/services/visa-data.service';
 import { Country } from '../../core/models/visa.models';
 
 @Component({
-    selector: 'app-home',
-    standalone: true,
-    imports: [RouterLink, CommonModule, FormsModule],
-    template: `
+  selector: 'app-home',
+  standalone: true,
+  imports: [RouterLink, CommonModule, FormsModule],
+  template: `
     <div class="page-wrapper">
 
       <!-- ── Hero Section ── -->
@@ -196,7 +196,7 @@ import { Country } from '../../core/models/visa.models';
 
     </div>
   `,
-    styles: [`
+  styles: [`
     /* ── Hero ── */
     .hero {
       position: relative; min-height: 100vh;
@@ -359,55 +359,89 @@ import { Country } from '../../core/models/visa.models';
     .cta-actions { display: flex; gap: 1rem; flex-wrap: wrap; }
     .cta-visual { font-size: 5rem; animation: float 4s ease-in-out infinite; }
 
-    @media (max-width: 640px) {
-      .hero-stats { gap: 1rem; }
+    @media (max-width: 1024px) {
+      .hero-title { font-size: 3.5rem; }
+    }
+
+    @media (max-width: 768px) {
+      .hero { min-height: auto; padding: 6rem 0 3rem; }
+      .hero-content { padding: 4rem 1rem 2rem; }
+      .hero-title { font-size: 2.75rem; }
+      .search-container { margin-bottom: 2rem; }
+      .hero-stats { gap: 1.5rem; }
+      .hero-stat { flex: 1 1 120px; }
       .hero-stat-divider { display: none; }
-      .cta-card { text-align: center; }
-      .cta-actions { justify-content: center; }
+      
+      .section-header { flex-direction: column; align-items: flex-start; gap: 1rem; }
+      .region-filters { width: 100%; overflow-x: auto; padding-bottom: 0.5rem; -webkit-overflow-scrolling: touch; }
+      .region-filters .chip { flex-shrink: 0; }
+    }
+
+    @media (max-width: 640px) {
+      .hero-title { font-size: 2.25rem; }
+      .hero-subtitle { font-size: 0.9375rem; }
+      .search-box { border-radius: 1rem; padding: 0.625rem 1rem; }
+      .search-tags { gap: 0.375rem; }
+      .chip { font-size: 0.8125rem; padding: 0.375rem 0.75rem; }
+      
+      .countries-grid { grid-template-columns: 1fr; }
+      .country-card { padding: 1rem; }
+      .country-flag { font-size: 2rem; }
+      
+      .cta-card { padding: 2rem 1.5rem; text-align: center; }
+      .cta-actions { justify-content: center; width: 100%; }
+      .cta-actions .btn { width: 100%; }
       .cta-visual { display: none; }
     }
+
+    @media (max-width: 480px) {
+      .hero-title { font-size: 2rem; }
+      .stat-num { font-size: 1.5rem; }
+      .hero-stats { gap: 1rem; }
+    }
+
   `]
 })
 export class HomeComponent implements OnInit {
-    visaDataService = inject(VisaDataService);
-    searchQuery = '';
-    stats = { totalCountries: 0, totalVisaTypes: 0, eVisaCountries: 0, onArrivalCountries: 0 };
+  visaDataService = inject(VisaDataService);
+  searchQuery = '';
+  stats = { totalCountries: 0, totalVisaTypes: 0, eVisaCountries: 0, onArrivalCountries: 0 };
 
-    quickSearches = ['🇸🇬 Singapore', '🇯🇵 Japan', '🇺🇸 USA', '🇬🇧 UK', '🇦🇺 Australia'];
+  quickSearches = ['🇸🇬 Singapore', '🇯🇵 Japan', '🇺🇸 USA', '🇬🇧 UK', '🇦🇺 Australia'];
 
-    features = [
-        { icon: '🌍', title: 'Country Visa Overview', description: 'Detailed visa info for 100+ countries including fees, processing times, and requirements.', link: '/', cta: 'Explore Countries' },
-        { icon: '📋', title: 'Smart Checklist Generator', description: 'Get a personalized document checklist based on your nationality, destination, and profile.', link: '/checklist', cta: 'Generate Checklist' },
-        { icon: '📖', title: 'Step-by-Step Guide', description: 'Follow our detailed application walkthrough from document prep to visa collection.', link: '/guide', cta: 'View Guide' },
-        { icon: '🤖', title: 'AI Chat Assistant', description: 'Ask any visa question in plain language and get instant, accurate answers.', link: '/chat', cta: 'Chat Now' },
-        { icon: '📊', title: 'Application Tracker', description: 'Track your visa application progress and get reminders for important deadlines.', link: '/dashboard', cta: 'Track Application' },
-        { icon: '💰', title: 'Cost Estimator', description: 'Calculate total visa costs including fees, service charges, and travel insurance.', link: '/guide', cta: 'Estimate Cost' },
-    ];
+  features = [
+    { icon: '🌍', title: 'Country Visa Overview', description: 'Detailed visa info for 100+ countries including fees, processing times, and requirements.', link: '/', cta: 'Explore Countries' },
+    { icon: '📋', title: 'Smart Checklist Generator', description: 'Get a personalized document checklist based on your nationality, destination, and profile.', link: '/checklist', cta: 'Generate Checklist' },
+    { icon: '📖', title: 'Step-by-Step Guide', description: 'Follow our detailed application walkthrough from document prep to visa collection.', link: '/guide', cta: 'View Guide' },
+    { icon: '🤖', title: 'AI Chat Assistant', description: 'Ask any visa question in plain language and get instant, accurate answers.', link: '/chat', cta: 'Chat Now' },
+    { icon: '📊', title: 'Application Tracker', description: 'Track your visa application progress and get reminders for important deadlines.', link: '/dashboard', cta: 'Track Application' },
+    { icon: '💰', title: 'Cost Estimator', description: 'Calculate total visa costs including fees, service charges, and travel insurance.', link: '/guide', cta: 'Estimate Cost' },
+  ];
 
-    steps = [
-        { num: '1', icon: '🔍', title: 'Select Country', desc: 'Choose your destination and visa type from our comprehensive database' },
-        { num: '2', icon: '📋', title: 'Generate Checklist', desc: 'Get a personalized document list based on your travel profile' },
-        { num: '3', icon: '📤', title: 'Apply with Confidence', desc: 'Follow our step-by-step guide to submit a complete application' },
-        { num: '4', icon: '✅', title: 'Track & Receive', desc: 'Monitor your application status and receive your visa' },
-    ];
+  steps = [
+    { num: '1', icon: '🔍', title: 'Select Country', desc: 'Choose your destination and visa type from our comprehensive database' },
+    { num: '2', icon: '📋', title: 'Generate Checklist', desc: 'Get a personalized document list based on your travel profile' },
+    { num: '3', icon: '📤', title: 'Apply with Confidence', desc: 'Follow our step-by-step guide to submit a complete application' },
+    { num: '4', icon: '✅', title: 'Track & Receive', desc: 'Monitor your application status and receive your visa' },
+  ];
 
-    ngOnInit() {
-        this.stats = this.visaDataService.getStats();
-    }
+  ngOnInit() {
+    this.stats = this.visaDataService.getStats();
+  }
 
-    onSearch(q: string) {
-        this.visaDataService.setSearchQuery(q.replace(/^[^\w\s]+\s*/, ''));
-    }
+  onSearch(q: string) {
+    this.visaDataService.setSearchQuery(q.replace(/^[^\w\s]+\s*/, ''));
+  }
 
-    quickSearch(tag: string) {
-        const name = tag.replace(/^[^\w\s]+\s*/, '').trim();
-        this.searchQuery = name;
-        this.visaDataService.setSearchQuery(name);
-    }
+  quickSearch(tag: string) {
+    const name = tag.replace(/^[^\w\s]+\s*/, '').trim();
+    this.searchQuery = name;
+    this.visaDataService.setSearchQuery(name);
+  }
 
-    clearSearch() {
-        this.searchQuery = '';
-        this.visaDataService.setSearchQuery('');
-        this.visaDataService.setRegion('All');
-    }
+  clearSearch() {
+    this.searchQuery = '';
+    this.visaDataService.setSearchQuery('');
+    this.visaDataService.setRegion('All');
+  }
 }

@@ -1,12 +1,15 @@
 import { Injectable, signal, inject, PLATFORM_ID } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 import { ApplicationTracker, ApplicationStatus, ApplicationStep } from '../models/visa.models';
+import { AuthService } from './auth.service';
 
 @Injectable({ providedIn: 'root' })
 export class TrackerService {
     private platformId = inject(PLATFORM_ID);
+    private authService = inject(AuthService);
 
     private readonly defaultSteps: ApplicationStep[] = [
+
         { id: 's1', label: 'Gather Documents', description: 'Collect all required documents per checklist', completed: false, order: 1 },
         { id: 's2', label: 'Fill Application Form', description: 'Complete the visa application form accurately', completed: false, order: 2 },
         { id: 's3', label: 'Book Appointment', description: 'Schedule appointment at embassy/consulate or VFS', completed: false, order: 3 },
@@ -42,9 +45,10 @@ export class TrackerService {
     }
 
     private getSampleApplications(): ApplicationTracker[] {
+        const userId = this.authService.user()?.id || 'guest';
         return [
             {
-                id: 'app-001', userId: 'user-1', country: 'Singapore', countryCode: 'SG',
+                id: 'app-001', userId: userId, country: 'Singapore', countryCode: 'SG',
                 visaType: 'Tourist Visa', status: 'under_review',
                 submittedDate: '2026-02-10', expectedDate: '2026-02-17',
                 notes: 'Applied through VFS Global',
@@ -52,7 +56,7 @@ export class TrackerService {
                 steps: this.defaultSteps.map((s, i) => ({ ...s, completed: i < 5, completedAt: i < 5 ? '2026-02-10' : undefined }))
             },
             {
-                id: 'app-002', userId: 'user-1', country: 'Japan', countryCode: 'JP',
+                id: 'app-002', userId: userId, country: 'Japan', countryCode: 'JP',
                 visaType: 'Tourist Visa', status: 'documents_gathering',
                 submittedDate: undefined, expectedDate: undefined,
                 notes: 'Planning for March trip',
@@ -63,9 +67,10 @@ export class TrackerService {
     }
 
     addApplication(data: Partial<ApplicationTracker>): ApplicationTracker {
+        const userId = this.authService.user()?.id || 'guest';
         const app: ApplicationTracker = {
             id: `app-${Date.now()}`,
-            userId: 'user-1',
+            userId: userId,
             country: data.country || '',
             countryCode: data.countryCode || '',
             visaType: data.visaType || '',
@@ -83,6 +88,7 @@ export class TrackerService {
         return app;
     }
 
+
     updateStatus(id: string, status: ApplicationStatus) {
         this._applications.update(apps => {
             const updated = apps.map(a => a.id === id ? { ...a, status, updatedAt: new Date().toISOString() } : a);
@@ -98,19 +104,26 @@ export class TrackerService {
                 const steps = a.steps.map(s =>
                     s.id === stepId ? { ...s, completed: !s.completed, completedAt: !s.completed ? new Date().toISOString() : undefined } : s
                 );
+
+                // Only auto-update status if it's in a transitional state
+                let status = a.status;
                 const completedCount = steps.filter(s => s.completed).length;
-                let status: ApplicationStatus = a.status;
-                if (completedCount === 0) status = 'draft';
-                else if (completedCount < 5) status = 'documents_gathering';
-                else if (completedCount === 5) status = 'submitted';
-                else if (completedCount < 8) status = 'under_review';
-                else status = 'approved';
+
+                if (status === 'draft' || status === 'documents_gathering' || status === 'submitted') {
+                    if (completedCount === 0) status = 'draft';
+                    else if (completedCount < 5) status = 'documents_gathering';
+                    else if (completedCount === 5) status = 'submitted';
+                    else if (completedCount > 5 && completedCount < 8) status = 'under_review';
+                    else if (completedCount === 8) status = 'approved';
+                }
+
                 return { ...a, steps, status, updatedAt: new Date().toISOString() };
             });
             this.saveToStorage(updated);
             return updated;
         });
     }
+
 
     deleteApplication(id: string) {
         this._applications.update(apps => {

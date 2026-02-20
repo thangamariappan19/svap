@@ -166,16 +166,35 @@ export class VisaDataService {
         }
     ];
 
+    private _countries = signal<Country[]>(this.countries);
     private _searchQuery = signal('');
     private _selectedRegion = signal('All');
 
     readonly searchQuery = this._searchQuery.asReadonly();
     readonly selectedRegion = this._selectedRegion.asReadonly();
 
+    constructor() {
+        this.fetchCountries();
+    }
+
+    private async fetchCountries() {
+        try {
+            const response = await fetch('/api/visa/countries');
+            const result = await response.json();
+            if (result.success && result.data.length > 0) {
+                // If backend data is available, update the signal
+                // Note: We might need to map backend models to frontend models if they differ
+                // For now assuming they match or we prioritize frontend richness
+            }
+        } catch (error) {
+            console.warn('Failed to fetch countries from server, using local data');
+        }
+    }
+
     readonly filteredCountries = computed(() => {
         const q = this._searchQuery().toLowerCase();
         const r = this._selectedRegion();
-        return this.countries.filter(c => {
+        return this._countries().filter(c => {
             const matchesSearch = !q || c.name.toLowerCase().includes(q) || c.region.toLowerCase().includes(q);
             const matchesRegion = r === 'All' || c.region === r;
             return matchesSearch && matchesRegion;
@@ -183,11 +202,11 @@ export class VisaDataService {
     });
 
     readonly popularCountries = computed(() =>
-        this.countries.filter(c => c.popularDestination).slice(0, 6)
+        this._countries().filter(c => c.popularDestination).slice(0, 6)
     );
 
     readonly regions = computed(() => {
-        const all = ['All', ...new Set(this.countries.map(c => c.region))];
+        const all = ['All', ...new Set(this._countries().map(c => c.region))];
         return all;
     });
 
@@ -195,21 +214,23 @@ export class VisaDataService {
     setRegion(r: string) { this._selectedRegion.set(r); }
 
     getCountryById(id: string): Country | undefined {
-        return this.countries.find(c => c.id === id);
+        return this._countries().find(c => c.id === id);
     }
 
     getCountryByCode(code: string): Country | undefined {
-        return this.countries.find(c => c.code === code);
+        return this._countries().find(c => c.code === code);
     }
 
-    getAllCountries(): Country[] { return this.countries; }
+    getAllCountries(): Country[] { return this._countries(); }
 
     getStats() {
+        const countries = this._countries();
         return {
-            totalCountries: this.countries.length,
-            totalVisaTypes: this.countries.reduce((acc, c) => acc + c.visaTypes.length, 0),
-            eVisaCountries: this.countries.filter(c => c.visaTypes.some(v => v.eVisa)).length,
-            onArrivalCountries: this.countries.filter(c => c.visaTypes.some(v => v.onArrival)).length
+            totalCountries: countries.length,
+            totalVisaTypes: countries.reduce((acc, c) => acc + c.visaTypes.length, 0),
+            eVisaCountries: countries.filter(c => c.visaTypes.some(v => v.eVisa)).length,
+            onArrivalCountries: countries.filter(c => c.visaTypes.some(v => v.onArrival)).length
         };
     }
 }
+
